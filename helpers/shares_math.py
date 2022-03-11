@@ -16,8 +16,8 @@ def from_want_to_shares(
     """
     ## Math from Soldity
     expected_shares = (
-        want_deposited * total_supply_before_deposit / balance_before_deposit
-    )
+        want_deposited * total_supply_before_deposit
+    ) // balance_before_deposit
 
     return expected_shares
 
@@ -27,7 +27,7 @@ def from_shares_to_want(shares_to_burn, ppfs_before_withdraw, vault_decimals):
     Used to estimate how much want you'll get for a withdrawal, by burning the shares (including fees)
     """
     ## Math from Solidity
-    expected_want = shares_to_burn * ppfs_before_withdraw / 10**vault_decimals
+    expected_want = (shares_to_burn * ppfs_before_withdraw) // 10**vault_decimals
 
     return expected_want
 
@@ -39,8 +39,8 @@ def get_withdrawal_fees_in_want(
     Used to calculate the fees (in want) the treasury will receive when taking withdrawal fees
     """
     ## Math from Solidity
-    value = shares_to_burn * ppfs_before_withdraw / 10**vault_decimals
-    fees = value * withdrawal_fee_bps / MAX_BPS
+    value = (shares_to_burn * ppfs_before_withdraw) // 10**vault_decimals
+    fees = (value * withdrawal_fee_bps) // MAX_BPS
 
     return fees
 
@@ -63,10 +63,8 @@ def get_withdrawal_fees_in_shares(
 
     ## Math from code ## Issues shares based on want * supply / balance
     expected_shares = (
-        expected_fee_in_want
-        * total_supply_before_withdraw
-        / vault_balance_before_withdraw
-    )
+        expected_fee_in_want * total_supply_before_withdraw
+    ) // vault_balance_before_withdraw
     return expected_shares
 
 
@@ -75,7 +73,7 @@ def get_performance_fees_want(total_harvest_gain, performance_fee):
     Given the harvested Want returns the fee in want
     """
 
-    return total_harvest_gain * performance_fee / MAX_BPS
+    return (total_harvest_gain * performance_fee) // MAX_BPS
 
 
 def get_management_fees_want(total_assets, time_passed, management_fee):
@@ -83,7 +81,7 @@ def get_management_fees_want(total_assets, time_passed, management_fee):
     Given the total assets, the time expired and the management fee, returns the management fee in want
     """
 
-    return management_fee * total_assets * time_passed / SECS_PER_YEAR / MAX_BPS
+    return (management_fee * total_assets * time_passed) // SECS_PER_YEAR // MAX_BPS
 
 
 def get_performance_fees_shares(
