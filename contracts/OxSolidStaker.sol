@@ -51,6 +51,12 @@ contract OxSolidStaker is BaseStrategy {
         SOLID.safeApprove(address(SOLIDLY_ROUTER), type(uint256).max);
     }
 
+    function setClaimRewardsOnWithdrawAll(bool _claimRewardsOnWithdrawAll)
+        external
+    {
+        claimRewardsOnWithdrawAll = _claimRewardsOnWithdrawAll;
+    }
+
     /// @dev Return the name of the strategy
     function getName() external pure override returns (string memory) {
         return "OxSolidStaker";
