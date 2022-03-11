@@ -81,11 +81,13 @@ contract OxSolidStaker is BaseStrategy {
 
     /// @dev Withdraw all funds, this is used for migrations, most of the time for emergency reasons
     function _withdrawAll() internal override {
-        // Add code here to unlock all available funds
-        if (claimRewardsOnWithdrawAll) {
-            OXSOLID_REWARDS.exit();
-        } else {
-            OXSOLID_REWARDS.withdraw(balanceOfPool());
+        uint256 poolBalance = balanceOfPool();
+        if (poolBalance > 0) {
+            if (claimRewardsOnWithdrawAll) {
+                OXSOLID_REWARDS.exit();
+            } else {
+                OXSOLID_REWARDS.withdraw(balanceOfPool());
+            }
         }
     }
 
@@ -152,12 +154,17 @@ contract OxSolidStaker is BaseStrategy {
         }
 
         // OXSOLID (want)
+        // TODO: Should report when 0?
         uint256 oxSolidGained = balanceOfWant().sub(oxSolidBefore);
         if (oxSolidGained > 0) {
             _reportToVault(oxSolidGained);
             harvested[1] = TokenAmount(address(OXSOLID), oxSolidGained);
+
+            // Redeposit
+            _deposit(oxSolidGained);
         }
 
+        // TODO: Should report when 0?
         // 0 --> OXD
         // 1 --> OXSOLID
         // 2 --> SOLID
@@ -175,8 +182,6 @@ contract OxSolidStaker is BaseStrategy {
             }
             harvested[i - 1] = TokenAmount(rewardToken, rewardBalance);
         }
-
-        _deposit(oxSolidGained);
     }
 
     // Example tend is a no-op which returns the values, could also just revert
