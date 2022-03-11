@@ -1,9 +1,9 @@
 black
-eth-brownie>=1.11.0,<2.0.0
-dotmap
-python-dotenv
-tabulate
-rich
 click
+dotmap
+eth-brownie>=1.11.0,<2.0.0
 platformdirs
+python-dotenv
 regex
+rich
+tabulate

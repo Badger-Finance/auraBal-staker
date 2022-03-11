@@ -15,4 +15,4 @@ def val(amount=0, decimals=18, token=None):
     if token:
         decimals = interface.IERC20Detailed(token).decimals()
 
-    return "{:,.18f}".format(amount / 10 ** decimals)
+    return "{:,.18f}".format(amount / 10**decimals)

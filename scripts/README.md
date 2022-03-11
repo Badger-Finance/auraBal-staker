@@ -20,5 +20,4 @@ Setup all the parameters to production by using the BadgerRegistry to fetch safe
 
 NOTE: After this stage the Vault and Strategy MAYBE safe. You have to verify the settings to ensure they are properly set to safe values.
 
-
 ## TODO: 4. 5. 6 if they are even needed

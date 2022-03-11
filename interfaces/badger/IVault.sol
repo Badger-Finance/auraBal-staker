@@ -3,9 +3,7 @@
 pragma solidity 0.6.12;
 
 interface IVault {
-    function reportHarvest(
-        uint256 _harvestedAmount
-    ) external;
+    function reportHarvest(uint256 _harvestedAmount) external;
 
     function reportAdditionalToken(address _token) external;
 

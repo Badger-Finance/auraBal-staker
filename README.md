@@ -1,4 +1,3 @@
-
 # Badger Strategy V1.5 Brownie Mix
 
 See Vaults 1.5 Repo for Audit Reports
@@ -72,7 +71,6 @@ Deployment will set up a Vault, Controller and deploy your strategy
 3. Write you `MyStrategy`
 
 4. Run tests: `brownie test --interactive` and debug anytime you get an error
-
 
 ## Adding Configuration
 

@@ -1,11 +1,11 @@
 {
-    "scripts": {
-        "prettier": "prettier --write '(contracts|interfaces)/**/*.sol'",
-        "prettier:list": "prettier --list-different '(contracts|interfaces)/**/*.sol'",
-        "prettier:check": "prettier --check '(contracts|interfaces)/**/*.sol'"
-    },
-    "devDependencies": {
-        "prettier": "^2.5.1",
-        "prettier-plugin-solidity": "^1.0.0-beta.19"
-    }
+  "scripts": {
+    "prettier": "prettier --write '(contracts|interfaces)/**/*.sol'",
+    "prettier:list": "prettier --list-different '(contracts|interfaces)/**/*.sol'",
+    "prettier:check": "prettier --check '(contracts|interfaces)/**/*.sol'"
+  },
+  "devDependencies": {
+    "prettier": "^2.5.1",
+    "prettier-plugin-solidity": "^1.0.0-beta.19"
+  }
 }

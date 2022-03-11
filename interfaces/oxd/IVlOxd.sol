@@ -36,9 +36,7 @@ interface IVlOxd {
         uint256 _spendRatio
     ) external;
 
-    function processExpiredLocks(
-        bool _relock
-    ) external;
+    function processExpiredLocks(bool _relock) external;
 
     function processExpiredLocks(
         bool _relock,

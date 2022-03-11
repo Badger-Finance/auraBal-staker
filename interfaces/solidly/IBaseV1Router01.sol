@@ -9,7 +9,6 @@ struct route {
 }
 
 interface IBaseV1Router01 {
-
     function addLiquidity(
         address tokenA,
         address tokenB,
@@ -35,5 +34,4 @@ interface IBaseV1Router01 {
         address to,
         uint256 deadline
     ) external returns (uint256[] memory amounts);
-
 }
