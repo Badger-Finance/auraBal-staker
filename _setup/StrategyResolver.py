@@ -1,5 +1,8 @@
+from brownie import interface
+
 from helpers.StrategyCoreResolver import StrategyCoreResolver
 from rich.console import Console
+from _setup.config import WANT, WFTM
 
 console = Console()
 
@@ -11,50 +14,64 @@ class StrategyResolver(StrategyCoreResolver):
         (Strategy Must Implement)
         """
         strategy = self.manager.strategy
-        return {}
+        sett = self.manager.sett
+        return {
+            "oxSolidRewards": strategy.OXSOLID_REWARDS(),
+            "bvlOxd": strategy.bvlOxd(),
+            "badgerTree": sett.badgerTree(),
+        }
 
-    def hook_after_confirm_withdraw(self, before, after, params):
-        """
-        Specifies extra check for ordinary operation on withdrawal
-        Use this to verify that balances in the get_strategy_destinations are properly set
-        """
-        assert True
+    def add_balances_snap(self, calls, entities):
+        super().add_balances_snap(calls, entities)
+        strategy = self.manager.strategy
 
-    def hook_after_confirm_deposit(self, before, after, params):
-        """
-        Specifies extra check for ordinary operation on deposit
-        Use this to verify that balances in the get_strategy_destinations are properly set
-        """
-        assert True  ## Done in earn
+        oxd = interface.IERC20(strategy.OXD())
+        oxSolid = interface.IERC20(strategy.OXSOLID())  # want
+        solid = interface.IERC20(strategy.SOLID())
+        wftm = interface.IERC20(WFTM)
 
-    def hook_after_earn(self, before, after, params):
-        """
-        Specifies extra check for ordinary operation on earn
-        Use this to verify that balances in the get_strategy_destinations are properly set
-        """
-        assert True
+        bvlOxd = interface.IERC20(strategy.bvlOxd())
 
-    # def confirm_harvest(self, before, after, tx):
-    #     """
-    #     Verfies that the Harvest produced yield and fees
-    #     NOTE: This overrides default check, use only if you know what you're doing
-    #     """
-    #     console.print("=== Compare Harvest ===")
-    #     self.manager.printCompare(before, after)
-    #     self.confirm_harvest_state(before, after, tx)
+        calls = self.add_entity_balances_for_tokens(calls, "oxd", oxd, entities)
+        calls = self.add_entity_balances_for_tokens(calls, "oxSolid", oxSolid, entities)
+        calls = self.add_entity_balances_for_tokens(calls, "wftm", wftm, entities)
+        calls = self.add_entity_balances_for_tokens(calls, "bvlOxd", bvlOxd, entities)
 
-    #     valueGained = after.get("sett.getPricePerFullShare") > before.get(
-    #         "sett.getPricePerFullShare"
-    #     )
+        return calls
 
-    #     assert True
+    def confirm_harvest(self, before, after, tx):
+        console.print("=== Compare Harvest ===")
+        self.manager.printCompare(before, after)
+        self.confirm_harvest_state(before, after, tx)
 
-    def confirm_tend(self, before, after, tx):
-        """
-        Tend Should;
-        - Increase the number of staked tended tokens in the strategy-specific mechanism
-        - Reduce the number of tended tokens in the Strategy to zero
+        super().confirm_harvest(before, after, tx)
 
-        (Strategy Must Implement)
-        """
-        assert True
+        assert len(tx.events["Harvested"]) == 1
+        event = tx.events["Harvested"][0]
+
+        assert event["token"] == WANT
+        assert event["amount"] == after.get("sett.balance") - before.get("sett.balance")
+
+        assert len(tx.events["TreeDistribution"]) == 2
+
+        tokens = [("bvlOxd", self.manager.strategy.bvlOxd()), ("wftm", WFTM)]
+
+        for (name, token), event in zip(tokens, tx.events["TreeDistribution"]):
+            assert after.balances(name, "badgerTree") > before.balances(
+                name, "badgerTree"
+            )
+
+            if before.get("sett.performanceFeeGovernance") > 0:
+                assert after.balances(name, "treasury") > before.balances(
+                    name, "treasury"
+                )
+
+            if before.get("sett.performanceFeeStrategist") > 0:
+                assert after.balances(name, "strategist") > before.balances(
+                    name, "strategist"
+                )
+
+            assert event["token"] == token
+            assert event["amount"] == after.balances(
+                name, "badgerTree"
+            ) - before.balances(name, "badgerTree")
