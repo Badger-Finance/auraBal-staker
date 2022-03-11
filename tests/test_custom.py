@@ -11,5 +11,31 @@ from helpers.time import days
 """
 
 
-def test_my_custom_test(deployed):
-    assert True
+def test_claimRewardsOnWithdrawAll(deployer, vault, strategy, want, governance, oxd):
+    startingBalance = want.balanceOf(deployer)
+
+    depositAmount = startingBalance // 2
+    assert startingBalance >= depositAmount
+    assert startingBalance >= 0
+    # End Setup
+
+    # Deposit
+    assert want.balanceOf(vault) == 0
+
+    want.approve(vault, MaxUint256, {"from": deployer})
+    vault.deposit(depositAmount, {"from": deployer})
+
+    vault.earn({"from": governance})
+
+    chain.sleep(10000 * 13)  # Mine so we get some interest
+
+    chain.snapshot()
+
+    vault.withdrawToVault({"from": governance})
+    assert oxd.balanceOf(strategy) > 0
+
+    chain.revert()
+    strategy.setClaimRewardsOnWithdrawAll(False)
+
+    vault.withdrawToVault({"from": governance})
+    assert oxd.balanceOf(strategy) == 0

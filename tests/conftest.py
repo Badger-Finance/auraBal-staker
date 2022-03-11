@@ -91,7 +91,7 @@ def badgerTree():
 
 @pytest.fixture
 def oxd():
-    return "0xc5A9848b9d145965d821AaeC8fA32aaEE026492d"
+    return interface.IERC20("0xc5A9848b9d145965d821AaeC8fA32aaEE026492d")
 
 
 @pytest.fixture

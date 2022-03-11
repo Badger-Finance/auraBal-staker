@@ -51,6 +51,12 @@ contract OxSolidStaker is BaseStrategy {
         SOLID.safeApprove(address(SOLIDLY_ROUTER), type(uint256).max);
     }
 
+    function setClaimRewardsOnWithdrawAll(bool _claimRewardsOnWithdrawAll)
+        external
+    {
+        claimRewardsOnWithdrawAll = _claimRewardsOnWithdrawAll;
+    }
+
     /// @dev Return the name of the strategy
     function getName() external pure override returns (string memory) {
         return "OxSolidStaker";
@@ -125,25 +131,31 @@ contract OxSolidStaker is BaseStrategy {
 
         OXSOLID_REWARDS.getReward();
 
-        // TODO: Should harvest return actual harvested tokens or emitted tokens?
         uint256 numRewards = OXSOLID_REWARDS.rewardTokensLength();
         harvested = new TokenAmount[](numRewards - 1);
 
         // OXD --> bvlOXD
         uint256 oxdBalance = OXD.balanceOf(address(this));
+        harvested[0].token = address(bvlOxd);
         if (oxdBalance > 0) {
             bvlOxd.deposit(oxdBalance);
             uint256 vaultBalance = bvlOxd.balanceOf(address(this));
 
+            harvested[0].amount = vaultBalance;
             _processExtraToken(address(bvlOxd), vaultBalance);
-            harvested[0] = TokenAmount(address(bvlOxd), vaultBalance);
         }
 
         // SOLID --> OXSOLID
         uint256 solidBalance = SOLID.balanceOf(address(this));
         if (solidBalance > 0) {
+            (, bool stable) = SOLIDLY_ROUTER.getAmountOut(
+                solidBalance,
+                address(SOLID),
+                address(OXSOLID)
+            );
+
             route[] memory routeArray = new route[](1);
-            routeArray[0] = route(address(SOLID), address(OXSOLID), false); // Volatile pool
+            routeArray[0] = route(address(SOLID), address(OXSOLID), stable);
             SOLIDLY_ROUTER.swapExactTokensForTokens(
                 solidBalance,
                 solidBalance, // at least 1:1
@@ -154,17 +166,14 @@ contract OxSolidStaker is BaseStrategy {
         }
 
         // OXSOLID (want)
-        // TODO: Should report when 0?
         uint256 oxSolidGained = balanceOfWant().sub(oxSolidBefore);
+        harvested[1] = TokenAmount(address(OXSOLID), oxSolidGained);
+        _reportToVault(oxSolidGained);
         if (oxSolidGained > 0) {
-            _reportToVault(oxSolidGained);
-            harvested[1] = TokenAmount(address(OXSOLID), oxSolidGained);
-
             // Redeposit
             _deposit(oxSolidGained);
         }
 
-        // TODO: Should report when 0?
         // 0 --> OXD
         // 1 --> OXSOLID
         // 2 --> SOLID
@@ -177,10 +186,10 @@ contract OxSolidStaker is BaseStrategy {
             uint256 rewardBalance = IERC20Upgradeable(rewardToken).balanceOf(
                 address(this)
             );
+            harvested[i - 1] = TokenAmount(rewardToken, rewardBalance);
             if (rewardBalance > 0) {
                 _processExtraToken(rewardToken, rewardBalance);
             }
-            harvested[i - 1] = TokenAmount(rewardToken, rewardBalance);
         }
     }
 
@@ -203,9 +212,7 @@ contract OxSolidStaker is BaseStrategy {
         override
         returns (TokenAmount[] memory rewards)
     {
-        // TODO; Fine if this is different from harvested[] array?
         uint256 numRewards = OXSOLID_REWARDS.rewardTokensLength();
-
         rewards = new TokenAmount[](numRewards);
         for (uint256 i; i < numRewards; ++i) {
             address rewardToken = OXSOLID_REWARDS.rewardTokens(i);
