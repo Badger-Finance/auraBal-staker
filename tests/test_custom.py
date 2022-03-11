@@ -35,6 +35,11 @@ def test_claimRewardsOnWithdrawAll(deployer, vault, strategy, want, governance, 
     assert oxd.balanceOf(strategy) > 0
 
     chain.revert()
+
+    # Random can't call
+    with brownie.reverts("onlyGovernanceOrStrategist"):
+      strategy.setClaimRewardsOnWithdrawAll(False, {"from": accounts[5]})
+
     strategy.setClaimRewardsOnWithdrawAll(False)
 
     vault.withdrawToVault({"from": governance})
