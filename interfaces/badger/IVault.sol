@@ -3,6 +3,8 @@
 pragma solidity 0.6.12;
 
 interface IVault {
+    function token() external view returns (address);
+
     function reportHarvest(uint256 _harvestedAmount) external;
 
     function reportAdditionalToken(address _token) external;
@@ -30,5 +32,5 @@ interface IVault {
     // External
     function deposit(uint256 _amount) external;
 
-    function balanceOf(address) external returns (uint256);
+    function balanceOf(address) external view returns (uint256);
 }

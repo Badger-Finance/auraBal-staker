@@ -4,6 +4,7 @@ pragma solidity 0.6.12;
 pragma experimental ABIEncoderV2;
 
 import {IERC20Upgradeable} from "@openzeppelin-contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
+import {MathUpgradeable} from "@openzeppelin-contracts-upgradeable/math/MathUpgradeable.sol";
 import {SafeMathUpgradeable} from "@openzeppelin-contracts-upgradeable/math/SafeMathUpgradeable.sol";
 import {SafeERC20Upgradeable} from "@openzeppelin-contracts-upgradeable/token/ERC20/SafeERC20Upgradeable.sol";
 import {BaseStrategy} from "@badger-finance/BaseStrategy.sol";
@@ -36,17 +37,17 @@ contract OxSolidStaker is BaseStrategy {
     /// @notice Proxies will set any non constant variable you declare as default value
     /// @dev add any extra changeable variable at end of initializer as shown
     function initialize(address _vault, address _bvlOxd) public initializer {
+        assert(IVault(_vault).token() == address(OXSOLID));
+
         __BaseStrategy_init(_vault);
-        /// @dev Add config here
+
         want = address(OXSOLID);
         bvlOxd = IVault(_bvlOxd);
 
         claimRewardsOnWithdrawAll = true;
 
         OXSOLID.safeApprove(address(OXSOLID_REWARDS), type(uint256).max);
-
         OXD.safeApprove(_bvlOxd, type(uint256).max);
-
         SOLID.safeApprove(address(SOLIDLY_ROUTER), type(uint256).max);
     }
 
@@ -95,8 +96,17 @@ contract OxSolidStaker is BaseStrategy {
         override
         returns (uint256)
     {
-        OXSOLID_REWARDS.withdraw(_amount);
-        return _amount;
+        uint256 wantBalance = balanceOfWant();
+        if (wantBalance < _amount) {
+            uint256 toWithdraw = _amount.sub(wantBalance);
+            uint256 poolBalance = balanceOfPool();
+            if (poolBalance < toWithdraw) {
+                OXSOLID_REWARDS.withdraw(poolBalance);
+            } else {
+                OXSOLID_REWARDS.withdraw(toWithdraw);
+            }
+        }
+        return MathUpgradeable.min(_amount, balanceOfWant());
     }
 
     /// @dev Does this function require `tend` to be called?
@@ -117,12 +127,8 @@ contract OxSolidStaker is BaseStrategy {
         uint256 numRewards = OXSOLID_REWARDS.rewardTokensLength();
         harvested = new TokenAmount[](numRewards - 1);
 
-        // oxd, oxsolid, solid, wftm
-        // solid --> sell for oxsolid
-        // oxd --> vloxd
-        // oxsolid --> autocompound
-        // wftm --> sell for oxsolid?
-        uint256 oxdBalance = OXSOLID.balanceOf(address(this));
+        // OXD --> bvlOXD
+        uint256 oxdBalance = OXD.balanceOf(address(this));
         if (oxdBalance > 0) {
             bvlOxd.deposit(oxdBalance);
             uint256 vaultBalance = bvlOxd.balanceOf(address(this));
@@ -131,40 +137,46 @@ contract OxSolidStaker is BaseStrategy {
             harvested[0] = TokenAmount(address(bvlOxd), vaultBalance);
         }
 
+        // SOLID --> OXSOLID
         uint256 solidBalance = SOLID.balanceOf(address(this));
         if (solidBalance > 0) {
             route[] memory routeArray = new route[](1);
-            routeArray[0] = route(address(SOLID), address(OXSOLID), true);
+            routeArray[0] = route(address(SOLID), address(OXSOLID), false); // Volatile pool
             SOLIDLY_ROUTER.swapExactTokensForTokens(
                 solidBalance,
-                solidBalance,
+                solidBalance, // at least 1:1
                 routeArray,
                 address(this),
                 block.timestamp
             );
         }
 
-        uint256 oxSolidBalance = OXSOLID.balanceOf(address(this));
-
-        if (oxSolidBalance > 0) {
-            _reportToVault(oxSolidBalance.sub(oxSolidBefore));
-            harvested[1] = TokenAmount(
-                address(bvlOxd),
-                oxSolidBalance.sub(oxSolidBefore)
-            );
+        // OXSOLID (want)
+        uint256 oxSolidGained = balanceOfWant().sub(oxSolidBefore);
+        if (oxSolidGained > 0) {
+            _reportToVault(oxSolidGained);
+            harvested[1] = TokenAmount(address(OXSOLID), oxSolidGained);
         }
 
+        // 0 --> OXD
+        // 1 --> OXSOLID
+        // 2 --> SOLID
+        // ------------
+        // 3 --> WFTM |
+        // ...        | --> Emitted through BADGER_TREE
+        // ...        |
         for (uint256 i = 3; i < numRewards; ++i) {
             address rewardToken = OXSOLID_REWARDS.rewardTokens(i);
-            _processExtraToken(
-                rewardToken,
-                IERC20Upgradeable(rewardToken).balanceOf(address(this))
+            uint256 rewardBalance = IERC20Upgradeable(rewardToken).balanceOf(
+                address(this)
             );
-            harvested[i - 1] = TokenAmount(
-                rewardToken,
-                IERC20Upgradeable(rewardToken).balanceOf(address(this))
-            );
+            if (rewardBalance > 0) {
+                _processExtraToken(rewardToken, rewardBalance);
+            }
+            harvested[i - 1] = TokenAmount(rewardToken, rewardBalance);
         }
+
+        _deposit(oxSolidGained);
     }
 
     // Example tend is a no-op which returns the values, could also just revert
@@ -186,6 +198,7 @@ contract OxSolidStaker is BaseStrategy {
         override
         returns (TokenAmount[] memory rewards)
     {
+        // TODO; Fine if this is different from harvested[] array?
         uint256 numRewards = OXSOLID_REWARDS.rewardTokensLength();
 
         rewards = new TokenAmount[](numRewards);
@@ -198,3 +211,8 @@ contract OxSolidStaker is BaseStrategy {
         }
     }
 }
+
+/*
+TODO:
+- What should autoCompoundRatio be?
+*/
