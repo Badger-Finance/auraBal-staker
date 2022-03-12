@@ -54,6 +54,7 @@ contract OxSolidStaker is BaseStrategy {
     function setClaimRewardsOnWithdrawAll(bool _claimRewardsOnWithdrawAll)
         external
     {
+        _onlyGovernanceOrStrategist();
         claimRewardsOnWithdrawAll = _claimRewardsOnWithdrawAll;
     }
 

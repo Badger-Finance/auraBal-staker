@@ -45,7 +45,7 @@ def want(deployer):
     token = interface.IERC20Detailed(TOKEN_ADDRESS)
     WHALE = accounts.at(WHALE_ADDRESS, force=True)  ## Address with tons of token
 
-    token.transfer(deployer, token.balanceOf(WHALE), {"from": WHALE})
+    token.transfer(deployer, token.balanceOf(WHALE)/4, {"from": WHALE}) ## Taking a portion as it is a SC
     return token
 
 
