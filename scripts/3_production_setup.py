@@ -1,6 +1,6 @@
 import time
 
-from brownie import accounts, network, OxSolidStaker, TheVault, BadgerRegistry
+from brownie import accounts, network, OxSolidStakerStrategy, TheVault, BadgerRegistry
 
 from config import WANT, REWARD_TOKEN, LP_COMPONENT, REGISTRY
 
@@ -40,7 +40,7 @@ def main():
     assert STRAT != "123"
     assert VAULT != "123"
 
-    strategy = OxSolidStaker.at(STRAT)
+    strategy = OxSolidStakerStrategy.at(STRAT)
     vault = TheVault.at(VAULT)
 
     assert strategy.paused() == False

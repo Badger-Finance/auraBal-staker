@@ -1,7 +1,7 @@
 import time
 
 from brownie import (
-    OxSolidStaker,
+    OxSolidStakerStrategy,
     TheVault,
     MockStrategy,
     interface,
@@ -160,7 +160,7 @@ def deployed(
     vault.setStrategist(deployer, {"from": governance})
     # NOTE: TheVault starts unpaused
 
-    strategy = OxSolidStaker.deploy({"from": deployer})
+    strategy = OxSolidStakerStrategy.deploy({"from": deployer})
     strategy.initialize(vault, bvloxd)
     # NOTE: Strategy starts unpaused
 

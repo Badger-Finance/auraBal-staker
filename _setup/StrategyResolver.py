@@ -2,7 +2,7 @@ from brownie import interface
 
 from helpers.StrategyCoreResolver import StrategyCoreResolver
 from rich.console import Console
-from _setup.config import WANT, WFTM
+from _setup.config import WANT
 
 console = Console()
 
@@ -28,13 +28,11 @@ class StrategyResolver(StrategyCoreResolver):
         oxd = interface.IERC20(strategy.OXD())
         oxSolid = interface.IERC20(strategy.OXSOLID())  # want
         solid = interface.IERC20(strategy.SOLID())
-        wftm = interface.IERC20(WFTM)
 
         bvlOxd = interface.IERC20(strategy.bvlOxd())
 
         calls = self.add_entity_balances_for_tokens(calls, "oxd", oxd, entities)
         calls = self.add_entity_balances_for_tokens(calls, "oxSolid", oxSolid, entities)
-        calls = self.add_entity_balances_for_tokens(calls, "wftm", wftm, entities)
         calls = self.add_entity_balances_for_tokens(calls, "bvlOxd", bvlOxd, entities)
 
         return calls
@@ -52,26 +50,24 @@ class StrategyResolver(StrategyCoreResolver):
         assert event["token"] == WANT
         assert event["amount"] == after.get("sett.balance") - before.get("sett.balance")
 
-        assert len(tx.events["TreeDistribution"]) == 2
+        assert len(tx.events["TreeDistribution"]) == 1
+        event = tx.events["TreeDistribution"][0]
 
-        tokens = [("bvlOxd", self.manager.strategy.bvlOxd()), ("wftm", WFTM)]
+        assert after.balances("bvlOxd", "badgerTree") > before.balances(
+            "bvlOxd", "badgerTree"
+        )
 
-        for (name, token), event in zip(tokens, tx.events["TreeDistribution"]):
-            assert after.balances(name, "badgerTree") > before.balances(
-                name, "badgerTree"
+        if before.get("sett.performanceFeeGovernance") > 0:
+            assert after.balances("bvlOxd", "treasury") > before.balances(
+                "bvlOxd", "treasury"
             )
 
-            if before.get("sett.performanceFeeGovernance") > 0:
-                assert after.balances(name, "treasury") > before.balances(
-                    name, "treasury"
-                )
+        if before.get("sett.performanceFeeStrategist") > 0:
+            assert after.balances("bvlOxd", "strategist") > before.balances(
+                "bvlOxd", "strategist"
+            )
 
-            if before.get("sett.performanceFeeStrategist") > 0:
-                assert after.balances(name, "strategist") > before.balances(
-                    name, "strategist"
-                )
-
-            assert event["token"] == token
-            assert event["amount"] == after.balances(
-                name, "badgerTree"
-            ) - before.balances(name, "badgerTree")
+        assert event["token"] == self.manager.strategy.bvlOxd()
+        assert event["amount"] == after.balances(
+            "bvlOxd", "badgerTree"
+        ) - before.balances("bvlOxd", "badgerTree")

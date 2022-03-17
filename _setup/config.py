@@ -1,8 +1,6 @@
 ## Token deposited in the vault
 WANT = "0xDA0053F0bEfCbcaC208A3f867BB243716734D809"
 
-WFTM = "0x21be370D5312f44cB42ce377BC9b8a0cEF1A4C83"
-
 ## Account that has a lot of want (we will "borrow it" for testing)
 WHALE_ADDRESS = "0xDA0067ec0925eBD6D583553139587522310Bec60"
 ## Address for Badger Registry, used to fill in default addresses
