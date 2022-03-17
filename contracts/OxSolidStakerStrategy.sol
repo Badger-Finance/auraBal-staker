@@ -59,7 +59,7 @@ contract OxSolidStakerStrategy is BaseStrategy {
         OXD.safeApprove(_bvlOxd, type(uint256).max);
         SOLID.safeApprove(address(SOLIDLY_ROUTER), type(uint256).max);
 
-        _doRouterApprovals(address(WFTM));
+        WFTM.safeApprove(address(SOLIDLY_ROUTER), type(uint256).max);
     }
 
     function setClaimRewardsOnWithdrawAll(bool _claimRewardsOnWithdrawAll)
