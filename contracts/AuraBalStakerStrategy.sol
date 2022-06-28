@@ -26,9 +26,6 @@ contract AuraBalStakerStrategy is BaseStrategy {
     IBaseRewardPool public constant AURABAL_REWARDS =
         IBaseRewardPool(0x5e5ea2048475854a5702F5B8468A51Ba1296EFcC);
 
-    ICrvDepositorWrapper public constant VEBAL_DEPOSITOR_WRAPPER =
-        ICrvDepositorWrapper(0x68655AD9852a99C87C0934c7290BB62CFa5D4123);
-
     IVault public constant GRAVIAURA =
         IVault(0xBA485b556399123261a5F9c95d413B4f93107407);
     IBalancerVault public constant BALANCER_VAULT =
