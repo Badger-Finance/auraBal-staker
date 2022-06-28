@@ -40,7 +40,7 @@ def test_claimRewardsOnWithdrawAll(deployer, vault, strategy, want, governance):
 
     # Random can't call
     with brownie.reverts("onlyGovernanceOrStrategist"):
-      strategy.setClaimRewardsOnWithdrawAll(False, {"from": accounts[5]})
+        strategy.setClaimRewardsOnWithdrawAll(False, {"from": accounts[5]})
 
     strategy.setClaimRewardsOnWithdrawAll(False)
 

@@ -32,7 +32,9 @@ class StrategyResolver(StrategyCoreResolver):
 
         calls = self.add_entity_balances_for_tokens(calls, "aura", aura, entities)
         calls = self.add_entity_balances_for_tokens(calls, "auraBal", auraBal, entities)
-        calls = self.add_entity_balances_for_tokens(calls, "graviAura", graviAura, entities)
+        calls = self.add_entity_balances_for_tokens(
+            calls, "graviAura", graviAura, entities
+        )
 
         return calls
 
