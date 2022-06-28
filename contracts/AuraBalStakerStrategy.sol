@@ -259,7 +259,7 @@ contract AuraBalStakerStrategy is BaseStrategy {
         rewards = new TokenAmount[](numExtraRewards + 1);
 
         rewards[0] = TokenAmount(
-            address(BAL),
+            stakingRewards.rewardToken(),
             AURABAL_REWARDS.earned(address(this))
         );
 
