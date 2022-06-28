@@ -3,7 +3,7 @@ import time
 from brownie import (
     accounts,
     network,
-    OxSolidStakerStrategy,
+    AuraBalStakerStrategy,
     TheVault,
     AdminUpgradeabilityProxy,
     interface,
@@ -129,7 +129,7 @@ def deploy_strategy(vault, proxyAdmin, dev):
 
     print("Strategy Arguments: ", args)
 
-    strat_logic = OxSolidStakerStrategy.deploy({"from": dev})
+    strat_logic = AuraBalStakerStrategy.deploy({"from": dev})
     time.sleep(sleep_between_tx)
 
     strat_proxy = AdminUpgradeabilityProxy.deploy(
@@ -142,7 +142,7 @@ def deploy_strategy(vault, proxyAdmin, dev):
 
     ## We delete from deploy and then fetch again so we can interact
     AdminUpgradeabilityProxy.remove(strat_proxy)
-    strat_proxy = OxSolidStakerStrategy.at(strat_proxy.address)
+    strat_proxy = AuraBalStakerStrategy.at(strat_proxy.address)
 
     console.print("[green]Strategy was deployed at: [/green]", strat_proxy.address)
 

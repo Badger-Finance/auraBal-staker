@@ -1,14 +1,53 @@
 import brownie
 from brownie import *
-from helpers.constants import MaxUint256
-from helpers.SnapshotManager import SnapshotManager
+from helpers.constants import AddressZero, MaxUint256
 from helpers.time import days
+from helpers.utils import (
+    approx,
+)
 
-"""
-  TODO: Put your tests here to prove the strat is good!
-  See test_harvest_flow, for the basic tests
-  See test_strategy_permissions, for tests at the permissions level
-"""
+
+def state_setup(deployer, vault, want, keeper):
+    startingBalance = want.balanceOf(deployer)
+    depositAmount = int(startingBalance * 0.8)
+    assert depositAmount > 0
+
+    want.approve(vault, MaxUint256, {"from": deployer})
+    vault.deposit(depositAmount, {"from": deployer})
+
+    chain.sleep(days(1))
+    chain.mine()
+
+    vault.earn({"from": keeper})
+
+    chain.sleep(days(3))
+    chain.mine()
+
+
+def test_expected_aura_rewards_match_minted(deployer, vault, strategy, want, keeper):
+    state_setup(deployer, vault, want, keeper)
+
+    (bal, aura) = strategy.balanceOfRewards()
+    # Check that rewards are accrued
+    bal_amount = bal[1]
+    aura_amount = aura[1]
+    assert bal_amount > 0
+    assert aura_amount > 0
+
+    # Check that aura amount calculating function matches the result
+    assert aura_amount == strategy.getMintableAuraRewards(bal_amount)
+
+    # First Transfer event from harvest() function is emitted by aura._mint()
+    tx = strategy.harvest({"from": keeper})
+
+    for event in tx.events["Transfer"]:
+        if event["from"] == AddressZero and event["to"] == strategy:
+            assert approx(
+                event["value"],
+                aura_amount,
+                1,
+            )
+            break
 
 
 def test_claimRewardsOnWithdrawAll(deployer, vault, strategy, want, governance):
