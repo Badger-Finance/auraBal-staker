@@ -27,7 +27,7 @@ def from_shares_to_want(shares_to_burn, ppfs_before_withdraw, vault_decimals):
     Used to estimate how much want you'll get for a withdrawal, by burning the shares (including fees)
     """
     ## Math from Solidity
-    expected_want = (shares_to_burn * ppfs_before_withdraw) // 10 ** vault_decimals
+    expected_want = (shares_to_burn * ppfs_before_withdraw) // 10**vault_decimals
 
     return expected_want
 
@@ -39,7 +39,7 @@ def get_withdrawal_fees_in_want(
     Used to calculate the fees (in want) the treasury will receive when taking withdrawal fees
     """
     ## Math from Solidity
-    value = (shares_to_burn * ppfs_before_withdraw) // 10 ** vault_decimals
+    value = (shares_to_burn * ppfs_before_withdraw) // 10**vault_decimals
     fees = (value * withdrawal_fee_bps) // MAX_BPS
 
     return fees
