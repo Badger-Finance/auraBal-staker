@@ -61,7 +61,9 @@ contract AuraBalStakerStrategy is BaseStrategy {
         __BaseStrategy_init(_vault);
 
         want = address(AURABAL);
+
         claimRewardsOnWithdrawAll = true;
+        balEthBptToAuraBalMinOutBps = 9500; // max 5% slippage
 
         AURABAL.safeApprove(address(AURABAL_REWARDS), type(uint256).max);
 
@@ -220,9 +222,6 @@ contract AuraBalStakerStrategy is BaseStrategy {
             harvested[0].amount = auraBalEarned;
         }
 
-        // Report harvest
-        _reportToVault(auraBalEarned);
-
         // AURA --> graviAURA
         uint256 auraBalance = AURA.balanceOf(address(this));
         if (auraBalance > 0) {
@@ -231,6 +230,14 @@ contract AuraBalStakerStrategy is BaseStrategy {
 
             harvested[1].amount = graviAuraBalance;
             _processExtraToken(address(GRAVIAURA), graviAuraBalance);
+        }
+
+        // Report harvest
+        _reportToVault(auraBalEarned);
+
+        // Stake whatever is earned
+        if (auraBalEarned > 0) {
+            _deposit(auraBalEarned);
         }
     }
 
