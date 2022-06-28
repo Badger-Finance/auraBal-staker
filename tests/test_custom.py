@@ -11,8 +11,10 @@ from helpers.time import days
 """
 
 
-def test_claimRewardsOnWithdrawAll(deployer, vault, strategy, want, governance, oxd):
+def test_claimRewardsOnWithdrawAll(deployer, vault, strategy, want, governance):
     startingBalance = want.balanceOf(deployer)
+
+    aura = interface.IERC20Detailed(strategy.AURA())
 
     depositAmount = startingBalance // 2
     assert startingBalance >= depositAmount
@@ -32,7 +34,7 @@ def test_claimRewardsOnWithdrawAll(deployer, vault, strategy, want, governance, 
     chain.snapshot()
 
     vault.withdrawToVault({"from": governance})
-    assert oxd.balanceOf(strategy) > 0
+    assert aura.balanceOf(strategy) > 0
 
     chain.revert()
 
@@ -43,4 +45,4 @@ def test_claimRewardsOnWithdrawAll(deployer, vault, strategy, want, governance, 
     strategy.setClaimRewardsOnWithdrawAll(False)
 
     vault.withdrawToVault({"from": governance})
-    assert oxd.balanceOf(strategy) == 0
+    assert aura.balanceOf(strategy) == 0

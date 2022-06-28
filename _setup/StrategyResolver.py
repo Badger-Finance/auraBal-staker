@@ -16,8 +16,8 @@ class StrategyResolver(StrategyCoreResolver):
         strategy = self.manager.strategy
         sett = self.manager.sett
         return {
-            "oxSolidRewards": strategy.OXSOLID_REWARDS(),
-            "bvlOxd": strategy.bvlOxd(),
+            "auraBalRewards": strategy.AURABAL_REWARDS(),
+            "graviAura": strategy.GRAVIAURA(),
             "badgerTree": sett.badgerTree(),
         }
 
@@ -25,15 +25,14 @@ class StrategyResolver(StrategyCoreResolver):
         super().add_balances_snap(calls, entities)
         strategy = self.manager.strategy
 
-        oxd = interface.IERC20(strategy.OXD())
-        oxSolid = interface.IERC20(strategy.OXSOLID())  # want
-        solid = interface.IERC20(strategy.SOLID())
+        aura = interface.IERC20(strategy.AURA())
+        auraBal = interface.IERC20(strategy.AURABAL())  # want
 
-        bvlOxd = interface.IERC20(strategy.bvlOxd())
+        graviAura = interface.IERC20(strategy.GRAVIAURA())
 
-        calls = self.add_entity_balances_for_tokens(calls, "oxd", oxd, entities)
-        calls = self.add_entity_balances_for_tokens(calls, "oxSolid", oxSolid, entities)
-        calls = self.add_entity_balances_for_tokens(calls, "bvlOxd", bvlOxd, entities)
+        calls = self.add_entity_balances_for_tokens(calls, "aura", aura, entities)
+        calls = self.add_entity_balances_for_tokens(calls, "auraBal", auraBal, entities)
+        calls = self.add_entity_balances_for_tokens(calls, "graviAura", graviAura, entities)
 
         return calls
 
@@ -53,21 +52,21 @@ class StrategyResolver(StrategyCoreResolver):
         assert len(tx.events["TreeDistribution"]) == 1
         event = tx.events["TreeDistribution"][0]
 
-        assert after.balances("bvlOxd", "badgerTree") > before.balances(
-            "bvlOxd", "badgerTree"
+        assert after.balances("graviAura", "badgerTree") > before.balances(
+            "graviAura", "badgerTree"
         )
 
         if before.get("sett.performanceFeeGovernance") > 0:
-            assert after.balances("bvlOxd", "treasury") > before.balances(
-                "bvlOxd", "treasury"
+            assert after.balances("graviAura", "treasury") > before.balances(
+                "graviAura", "treasury"
             )
 
         if before.get("sett.performanceFeeStrategist") > 0:
-            assert after.balances("bvlOxd", "strategist") > before.balances(
-                "bvlOxd", "strategist"
+            assert after.balances("graviAura", "strategist") > before.balances(
+                "graviAura", "strategist"
             )
 
-        assert event["token"] == self.manager.strategy.bvlOxd()
+        assert event["token"] == self.manager.strategy.GRAVIAURA()
         assert event["amount"] == after.balances(
-            "bvlOxd", "badgerTree"
-        ) - before.balances("bvlOxd", "badgerTree")
+            "graviAura", "badgerTree"
+        ) - before.balances("graviAura", "badgerTree")

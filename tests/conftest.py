@@ -1,7 +1,7 @@
 import time
 
 from brownie import (
-    OxSolidStakerStrategy,
+    AuraBalStakerStrategy,
     TheVault,
     MockStrategy,
     interface,
@@ -45,7 +45,7 @@ def want(deployer):
     token = interface.IERC20Detailed(TOKEN_ADDRESS)
     WHALE = accounts.at(WHALE_ADDRESS, force=True)  ## Address with tons of token
 
-    token.transfer(deployer, token.balanceOf(WHALE)/4, {"from": WHALE}) ## Taking a portion as it is a SC
+    token.transfer(deployer, token.balanceOf(WHALE) / 4, {"from": WHALE}) ## Taking a portion as it is a SC
     return token
 
 
@@ -90,38 +90,6 @@ def badgerTree():
 
 
 @pytest.fixture
-def oxd():
-    return interface.IERC20("0xc5A9848b9d145965d821AaeC8fA32aaEE026492d")
-
-
-@pytest.fixture
-def bvloxd(oxd, governance, keeper, guardian, strategist, badgerTree):
-    vault = TheVault.deploy({"from": accounts[0]})
-    vault.initialize(
-        oxd,
-        governance,
-        keeper,
-        guardian,
-        governance,
-        strategist,
-        badgerTree,
-        "",
-        "",
-        [
-            PERFORMANCE_FEE_GOVERNANCE,
-            PERFORMANCE_FEE_STRATEGIST,
-            WITHDRAWAL_FEE,
-            MANAGEMENT_FEE,
-        ],
-    )
-    strategy = MockStrategy.deploy({"from": accounts[0]})
-    strategy.initialize(vault)
-
-    vault.setStrategy(strategy, {"from": governance})
-    return vault
-
-
-@pytest.fixture
 def deployed(
     want,
     deployer,
@@ -132,7 +100,6 @@ def deployed(
     proxyAdmin,
     randomUser,
     badgerTree,
-    bvloxd,
 ):
     """
     Deploys, vault and test strategy, mock token and wires them up.
@@ -160,8 +127,8 @@ def deployed(
     vault.setStrategist(deployer, {"from": governance})
     # NOTE: TheVault starts unpaused
 
-    strategy = OxSolidStakerStrategy.deploy({"from": deployer})
-    strategy.initialize(vault, bvloxd)
+    strategy = AuraBalStakerStrategy.deploy({"from": deployer})
+    strategy.initialize(vault)
     # NOTE: Strategy starts unpaused
 
     vault.setStrategy(strategy, {"from": governance})
