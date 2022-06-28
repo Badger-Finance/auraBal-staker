@@ -222,9 +222,6 @@ contract AuraBalStakerStrategy is BaseStrategy {
             harvested[0].amount = auraBalEarned;
         }
 
-        // Report harvest
-        _reportToVault(auraBalEarned);
-
         // AURA --> graviAURA
         uint256 auraBalance = AURA.balanceOf(address(this));
         if (auraBalance > 0) {
@@ -234,6 +231,10 @@ contract AuraBalStakerStrategy is BaseStrategy {
             harvested[1].amount = graviAuraBalance;
             _processExtraToken(address(GRAVIAURA), graviAuraBalance);
         }
+
+        // Report harvest and stake whatever is earned
+        _reportToVault(auraBalEarned);
+        _deposit(auraBalEarned);
     }
 
     // Example tend is a no-op which returns the values, could also just revert
