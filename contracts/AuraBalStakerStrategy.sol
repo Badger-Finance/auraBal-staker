@@ -61,7 +61,9 @@ contract AuraBalStakerStrategy is BaseStrategy {
         __BaseStrategy_init(_vault);
 
         want = address(AURABAL);
+
         claimRewardsOnWithdrawAll = true;
+        balEthBptToAuraBalMinOutBps = 9500; // max 5% slippage
 
         AURABAL.safeApprove(address(AURABAL_REWARDS), type(uint256).max);
 
