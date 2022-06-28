@@ -232,9 +232,13 @@ contract AuraBalStakerStrategy is BaseStrategy {
             _processExtraToken(address(GRAVIAURA), graviAuraBalance);
         }
 
-        // Report harvest and stake whatever is earned
+        // Report harvest
         _reportToVault(auraBalEarned);
-        _deposit(auraBalEarned);
+
+        // Stake whatever is earned
+        if (auraBalEarned > 0) {
+            _deposit(auraBalEarned);
+        }
     }
 
     // Example tend is a no-op which returns the values, could also just revert
