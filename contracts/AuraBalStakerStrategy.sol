@@ -55,7 +55,7 @@ contract AuraBalStakerStrategy is BaseStrategy {
     /// @dev Initialize the Strategy with security settings as well as tokens
     /// @notice Proxies will set any non constant variable you declare as default value
     /// @dev add any extra changeable variable at end of initializer as shown
-    function initialize(address _vault, address _bvlAura) public initializer {
+    function initialize(address _vault) public initializer {
         require(IVault(_vault).token() == address(AURABAL));
 
         __BaseStrategy_init(_vault);
@@ -228,7 +228,7 @@ contract AuraBalStakerStrategy is BaseStrategy {
         // Report harvest
         _reportToVault(auraBalEarned);
 
-        // AURA --> bvlAURA
+        // AURA --> graviAURA
         uint256 auraBalance = AURA.balanceOf(address(this));
         if (auraBalance > 0) {
             GRAVIAURA.deposit(auraBalance);
