@@ -146,8 +146,6 @@ contract AuraBalStakerStrategy is BaseStrategy {
         override
         returns (TokenAmount[] memory harvested)
     {
-        uint256 auraBalBefore = balanceOfWant();
-
         AURABAL_REWARDS.getReward();
 
         // Rewards are handled like this:
