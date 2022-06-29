@@ -12,10 +12,8 @@ import {BaseStrategy} from "@badger-finance/BaseStrategy.sol";
 import {IVault} from "../interfaces/badger/IVault.sol";
 import {IAsset} from "../interfaces/balancer/IAsset.sol";
 import {IBalancerVault, JoinKind} from "../interfaces/balancer/IBalancerVault.sol";
-import {IAuraToken} from "interfaces/aura/IAuraToken.sol";
-import {ICrvDepositorWrapper} from "interfaces/aura/ICrvDepositorWrapper.sol";
-import {IBaseRewardPool} from "interfaces/aura/IBaseRewardPool.sol";
-import {IVirtualBalanceRewardPool} from "interfaces/aura/IVirtualBalanceRewardPool.sol";
+import {IAuraToken} from "../interfaces/aura/IAuraToken.sol";
+import {IBaseRewardPool} from "../interfaces/aura/IBaseRewardPool.sol";
 
 contract AuraBalStakerStrategy is BaseStrategy {
     using SafeMathUpgradeable for uint256;
