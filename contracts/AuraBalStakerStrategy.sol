@@ -14,6 +14,7 @@ import {IAsset} from "../interfaces/balancer/IAsset.sol";
 import {IBalancerVault, JoinKind} from "../interfaces/balancer/IBalancerVault.sol";
 import {IAuraToken} from "../interfaces/aura/IAuraToken.sol";
 import {IBaseRewardPool} from "../interfaces/aura/IBaseRewardPool.sol";
+import {IVirtualBalanceRewardPool} from "interfaces/aura/IVirtualBalanceRewardPool.sol";
 
 contract AuraBalStakerStrategy is BaseStrategy {
     using SafeMathUpgradeable for uint256;
@@ -25,6 +26,9 @@ contract AuraBalStakerStrategy is BaseStrategy {
     IBaseRewardPool public constant AURABAL_REWARDS =
         IBaseRewardPool(0x5e5ea2048475854a5702F5B8468A51Ba1296EFcC);
 
+    // TODO: Update address
+    IVault public constant B_BB_A_USD =
+        IVault(0xBA485b556399123261a5F9c95d413B4f93107407);
     IVault public constant GRAVIAURA =
         IVault(0xBA485b556399123261a5F9c95d413B4f93107407);
 
@@ -149,12 +153,23 @@ contract AuraBalStakerStrategy is BaseStrategy {
         AURABAL_REWARDS.getReward();
 
         // Rewards are handled like this:
+        // BB_A_USD  --> B-BB_A_USD (emitted)
         // BAL       --> BAL/ETH BPT --> AURABAL (autocompounded)
         // AURA      --> GRAVIAURA (emitted)
-        // BB_A_USD  --> Left in strategy to be sweeped later
-        harvested = new TokenAmount[](2);
-        harvested[0].token = address(AURABAL);
-        harvested[1].token = address(GRAVIAURA);
+        harvested = new TokenAmount[](3);
+        harvested[0].token = address(B_BB_A_USD);
+        harvested[1].token = address(AURABAL);
+        harvested[2].token = address(GRAVIAURA);
+
+        // BB_A_USD --> B_BB_A_USD
+        uint256 bbaUsdBalance = BB_A_USD.balanceOf(address(this));
+        if (bbaUsdBalance > 0) {
+            B_BB_A_USD.deposit(bbaUsdBalance);
+            uint256 b_bbaUsdBalance = B_BB_A_USD.balanceOf(address(this));
+
+            harvested[0].amount = b_bbaUsdBalance;
+            _processExtraToken(address(B_BB_A_USD), b_bbaUsdBalance);
+        }
 
         // BAL --> BAL/ETH BPT --> AURABAL
         uint256 balBalance = BAL.balanceOf(address(this));
@@ -215,7 +230,7 @@ contract AuraBalStakerStrategy is BaseStrategy {
                 type(uint256).max
             );
 
-            harvested[0].amount = auraBalEarned;
+            harvested[1].amount = auraBalEarned;
         }
 
         // AURA --> graviAURA
@@ -224,7 +239,7 @@ contract AuraBalStakerStrategy is BaseStrategy {
             GRAVIAURA.deposit(auraBalance);
             uint256 graviAuraBalance = GRAVIAURA.balanceOf(address(this));
 
-            harvested[1].amount = graviAuraBalance;
+            harvested[2].amount = graviAuraBalance;
             _processExtraToken(address(GRAVIAURA), graviAuraBalance);
         }
 
@@ -256,14 +271,26 @@ contract AuraBalStakerStrategy is BaseStrategy {
         override
         returns (TokenAmount[] memory rewards)
     {
+        uint256 numExtraRewards = AURABAL_REWARDS.extraRewardsLength();
+        rewards = new TokenAmount[](numExtraRewards + 2);
+
         uint256 balEarned = AURABAL_REWARDS.earned(address(this));
 
-        rewards = new TokenAmount[](2);
         rewards[0] = TokenAmount(address(BAL), balEarned);
         rewards[1] = TokenAmount(
             address(AURA),
             getMintableAuraRewards(balEarned)
         );
+
+        for (uint256 i; i < numExtraRewards; ++i) {
+            IVirtualBalanceRewardPool extraRewardPool = IVirtualBalanceRewardPool(
+                    address(AURABAL_REWARDS.extraRewards(i))
+                );
+            rewards[i + 2] = TokenAmount(
+                extraRewardPool.rewardToken(),
+                extraRewardPool.earned(address(this))
+            );
+        }
     }
 
     /// @notice Returns the expected amount of AURA to be minted given an amount of BAL rewards
