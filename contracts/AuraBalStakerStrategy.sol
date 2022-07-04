@@ -72,6 +72,7 @@ contract AuraBalStakerStrategy is BaseStrategy {
         BAL.safeApprove(address(BALANCER_VAULT), type(uint256).max);
         BALETH_BPT.safeApprove(address(BALANCER_VAULT), type(uint256).max);
 
+        BB_A_USD.approve(address(B_BB_A_USD), type(uint256).max);
         AURA.approve(address(GRAVIAURA), type(uint256).max);
     }
 
@@ -87,6 +88,12 @@ contract AuraBalStakerStrategy is BaseStrategy {
         require(_minOutBps <= MAX_BPS, "Invalid minOutBps");
 
         balEthBptToAuraBalMinOutBps = _minOutBps;
+    }
+
+    function doPendingApprovals() external {
+        _onlyGovernance();
+
+        BB_A_USD.approve(address(B_BB_A_USD), type(uint256).max);
     }
 
     /// @dev Return the name of the strategy
