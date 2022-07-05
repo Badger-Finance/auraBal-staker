@@ -67,6 +67,9 @@ def test_is_acceptable_apr(vault, strategy, want, keeper, deployer):
     # Earn
     snap.settEarn({"from": keeper})
 
+    chain.sleep(15)
+    chain.mine(1)
+
     # Harvest
     strategy.harvest({"from": keeper})
 
