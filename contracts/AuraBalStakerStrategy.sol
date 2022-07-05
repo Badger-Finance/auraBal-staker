@@ -14,7 +14,7 @@ import {IAsset} from "../interfaces/balancer/IAsset.sol";
 import {IBalancerVault, JoinKind} from "../interfaces/balancer/IBalancerVault.sol";
 import {IAuraToken} from "../interfaces/aura/IAuraToken.sol";
 import {IBaseRewardPool} from "../interfaces/aura/IBaseRewardPool.sol";
-import {IVirtualBalanceRewardPool} from "interfaces/aura/IVirtualBalanceRewardPool.sol";
+import {IVirtualBalanceRewardPool} from "../interfaces/aura/IVirtualBalanceRewardPool.sol";
 
 contract AuraBalStakerStrategy is BaseStrategy {
     using SafeMathUpgradeable for uint256;
@@ -87,12 +87,6 @@ contract AuraBalStakerStrategy is BaseStrategy {
         require(_minOutBps <= MAX_BPS, "Invalid minOutBps");
 
         balEthBptToAuraBalMinOutBps = _minOutBps;
-    }
-
-    function doPendingApprovals() external {
-        _onlyGovernanceOrStrategist();
-
-        BB_A_USD.approve(address(B_BB_A_USD), type(uint256).max);
     }
 
     /// @dev Return the name of the strategy
