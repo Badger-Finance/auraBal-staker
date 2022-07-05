@@ -27,7 +27,8 @@ def state_setup(deployer, vault, want, keeper):
 def test_expected_aura_rewards_match_minted(deployer, vault, strategy, want, keeper):
     state_setup(deployer, vault, want, keeper)
 
-    (bal, aura) = strategy.balanceOfRewards()
+    (bal, aura, _) = strategy.balanceOfRewards()
+
     # Check that rewards are accrued
     bal_amount = bal[1]
     aura_amount = aura[1]
@@ -42,12 +43,22 @@ def test_expected_aura_rewards_match_minted(deployer, vault, strategy, want, kee
 
     for event in tx.events["Transfer"]:
         if event["from"] == AddressZero and event["to"] == strategy:
-            assert approx(
-                event["value"],
-                aura_amount,
-                1,
-            )
+            assert event["value"] == aura_amount
             break
+
+
+def test_balance_of_rewards(deployer, vault, strategy, want, keeper):
+    state_setup(deployer, vault, want, keeper)
+
+    (bal, aura, bb_a_usd) = strategy.balanceOfRewards()
+
+    # Check that rewards are accrued
+    bal_amount = bal[1]
+    aura_amount = aura[1]
+    bb_a_usd_amount = bb_a_usd[1]
+    assert bal_amount > 0
+    assert aura_amount > 0
+    assert bb_a_usd_amount > 0
 
 
 def test_claimRewardsOnWithdrawAll(deployer, vault, strategy, want, governance):
