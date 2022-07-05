@@ -89,12 +89,6 @@ contract AuraBalStakerStrategy is BaseStrategy {
         balEthBptToAuraBalMinOutBps = _minOutBps;
     }
 
-    function doPendingApprovals() external {
-        _onlyGovernanceOrStrategist();
-
-        BB_A_USD.approve(address(B_BB_A_USD), type(uint256).max);
-    }
-
     /// @dev Return the name of the strategy
     function getName() external pure override returns (string memory) {
         return "AuraBalStakerStrategy";
