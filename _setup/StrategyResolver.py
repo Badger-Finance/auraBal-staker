@@ -57,8 +57,8 @@ class StrategyResolver(StrategyCoreResolver):
         assert len(tx.events["TreeDistribution"]) == 2
 
         emits = {
-            "graviAura": self.manager.strategy.GRAVIAURA(),
             "bBbaUsd": self.manager.strategy.B_BB_A_USD(),
+            "graviAura": self.manager.strategy.GRAVIAURA(),
         }
 
         for token_key, event in zip(emits, tx.events["TreeDistribution"]):
