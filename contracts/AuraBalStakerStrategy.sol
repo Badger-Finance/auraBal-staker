@@ -28,7 +28,7 @@ contract AuraBalStakerStrategy is BaseStrategy {
 
     // TODO: Update address
     IVault public constant B_BB_A_USD =
-        IVault(0xBA485b556399123261a5F9c95d413B4f93107407);
+        IVault(0x06D756861De0724FAd5B5636124e0f252d3C1404);
     IVault public constant GRAVIAURA =
         IVault(0xBA485b556399123261a5F9c95d413B4f93107407);
 
@@ -111,10 +111,11 @@ contract AuraBalStakerStrategy is BaseStrategy {
         override
         returns (address[] memory)
     {
-        address[] memory protectedTokens = new address[](3);
+        address[] memory protectedTokens = new address[](4);
         protectedTokens[0] = want; // AURABAL
         protectedTokens[1] = address(AURA);
         protectedTokens[2] = address(BAL);
+        protectedTokens[3] = address(BB_A_USD);
         return protectedTokens;
     }
 
