@@ -21,66 +21,80 @@ def strat_proxy():
 
 
 @pytest.fixture
-def proxy_admin():
-    ADMIN_SLOT = "0xb53127684a568b3173ae13b9f8a6016e243e63b6e8ee1178d6a717850b5d6103"
-    admin = web3.eth.getStorageAt(STRAT_ADDRESS, ADMIN_SLOT).hex()
-    return Contract.from_explorer(admin)
+def new_strategy(vault_proxy, proxyAdmin, deployer):
+    args = [vault_proxy]
+
+    strat_logic = AuraBalStakerStrategy.deploy({"from": deployer})
+    strat_proxy = AdminUpgradeabilityProxy.deploy(
+        strat_logic,
+        proxyAdmin,
+        strat_logic.initialize.encode_input(*args),
+        {"from": deployer},
+    )
+
+    ## We delete from deploy and then fetch again so we can interact
+    AdminUpgradeabilityProxy.remove(strat_proxy)
+    strat_proxy = AuraBalStakerStrategy.at(strat_proxy.address)
+
+    return strat_proxy
 
 
-@pytest.fixture
-def proxy_admin_gov(proxy_admin):
-    return accounts.at(proxy_admin.owner(), force=True)
-
-
-def test_check_storage_integrity(
-    strat_proxy, vault_proxy, deployer, proxy_admin, proxy_admin_gov
-):
-    old_want = strat_proxy.want()
-    old_vault = strat_proxy.vault()
-    old_withdrawalMaxDeviationThreshold = strat_proxy.withdrawalMaxDeviationThreshold()
-    old_autoCompoundRatio = strat_proxy.autoCompoundRatio()
-    old_claimRewardsOnWithdrawAll = strat_proxy.claimRewardsOnWithdrawAll()
-    old_balEthBptToAuraBalMinOutBps = strat_proxy.balEthBptToAuraBalMinOutBps()
-
+def test_check_storage_integrity(strat_proxy, vault_proxy, new_strategy):
     with brownie.reverts():
         strat_proxy.B_BB_A_USD()
 
-    logics = [
-        AuraBalStakerStrategy.deploy({"from": deployer}),
-    ]
+    ## Check Integrity
+    assert new_strategy.want() == strat_proxy.want()
+    assert new_strategy.vault() == strat_proxy.vault()
+    assert (
+        new_strategy.withdrawalMaxDeviationThreshold()
+        == strat_proxy.withdrawalMaxDeviationThreshold()
+    )
+    assert new_strategy.autoCompoundRatio() == strat_proxy.autoCompoundRatio()
+    assert (
+        new_strategy.claimRewardsOnWithdrawAll()
+        == strat_proxy.claimRewardsOnWithdrawAll()
+    )
+    assert (
+        new_strategy.balEthBptToAuraBalMinOutBps()
+        == strat_proxy.balEthBptToAuraBalMinOutBps()
+    )
 
-    chain.snapshot()
-    for new_strat_logic in logics:
-        ## Do the Upgrade
-        proxy_admin.upgrade(strat_proxy, new_strat_logic, {"from": proxy_admin_gov})
+    # Check if var exists
+    assert new_strategy.B_BB_A_USD() != AddressZero
 
-        ## Check Integrity
-        assert old_want == strat_proxy.want()
-        assert old_vault == strat_proxy.vault()
-        assert (
-            old_withdrawalMaxDeviationThreshold
-            == strat_proxy.withdrawalMaxDeviationThreshold()
-        )
-        assert old_autoCompoundRatio == strat_proxy.autoCompoundRatio()
-        assert old_claimRewardsOnWithdrawAll == strat_proxy.claimRewardsOnWithdrawAll()
-        assert (
-            old_balEthBptToAuraBalMinOutBps == strat_proxy.balEthBptToAuraBalMinOutBps()
-        )
-        # Check if var exists
-        assert strat_proxy.B_BB_A_USD() != AddressZero
+    gov = accounts.at(vault_proxy.governance(), force=True)
+    bb_a_usd = interface.IERC20(strat_proxy.BB_A_USD())
 
-        gov = accounts.at(vault_proxy.governance(), force=True)
-        strategist = accounts.at(vault_proxy.strategist(), force=True)
+    # Harvest bb-a-usd
+    strat_proxy.harvest({"from": gov})
 
-        ## Let's do a quick earn and harvest as well
-        vault_proxy.earn({"from": gov})
+    # Checkpoint balance
+    old_balance = vault_proxy.balance()
 
-        with brownie.reverts():
-            strat_proxy.harvest({"from": gov})
+    assert bb_a_usd.balanceOf(strat_proxy) > 0
 
-        # Do pending approvals and then harvest
-        strat_proxy.doPendingApprovals({"from": strategist})
+    # Emit to tree
+    vault_proxy.emitNonProtectedToken(strat_proxy.BB_A_USD(), {"from": gov})
 
-        strat_proxy.harvest({"from": gov})
+    assert bb_a_usd.balanceOf(strat_proxy) == 0
+    assert bb_a_usd.balanceOf(vault_proxy) == 0
+    assert bb_a_usd.balanceOf(vault_proxy.treasury()) > 0
+    assert bb_a_usd.balanceOf(vault_proxy.badgerTree()) > 0
 
-        chain.revert()
+    # Migrate strategy
+    vault_proxy.withdrawToVault({"from": gov})
+
+    assert strat_proxy.balanceOf() == 0
+
+    vault_proxy.setStrategy(new_strategy, {"from": gov})
+    assert vault_proxy.strategy() == new_strategy
+
+    vault_proxy.earn({"from": gov})
+
+    assert new_strategy.balanceOf() > 0
+    assert vault_proxy.balance() == old_balance
+
+    # Test harvest
+    new_strategy.harvest({"from": gov})
+    assert bb_a_usd.balanceOf(new_strategy) == 0
