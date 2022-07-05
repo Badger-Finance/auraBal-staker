@@ -26,7 +26,6 @@ contract AuraBalStakerStrategy is BaseStrategy {
     IBaseRewardPool public constant AURABAL_REWARDS =
         IBaseRewardPool(0x5e5ea2048475854a5702F5B8468A51Ba1296EFcC);
 
-    // TODO: Update address
     IVault public constant B_BB_A_USD =
         IVault(0x06D756861De0724FAd5B5636124e0f252d3C1404);
     IVault public constant GRAVIAURA =
