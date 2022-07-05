@@ -70,6 +70,7 @@ def test_check_storage_integrity(
         assert strat_proxy.B_BB_A_USD() != AddressZero
 
         gov = accounts.at(vault_proxy.governance(), force=True)
+        strategist = accounts.at(vault_proxy.strategist(), force=True)
 
         ## Let's do a quick earn and harvest as well
         vault_proxy.earn({"from": gov})
@@ -78,7 +79,7 @@ def test_check_storage_integrity(
             strat_proxy.harvest({"from": gov})
 
         # Do pending approvals and then harvest
-        strat_proxy.doPendingApprovals({"from": gov})
+        strat_proxy.doPendingApprovals({"from": strategist})
 
         strat_proxy.harvest({"from": gov})
 

@@ -90,7 +90,7 @@ contract AuraBalStakerStrategy is BaseStrategy {
     }
 
     function doPendingApprovals() external {
-        _onlyGovernance();
+        _onlyGovernanceOrStrategist();
 
         BB_A_USD.approve(address(B_BB_A_USD), type(uint256).max);
     }
