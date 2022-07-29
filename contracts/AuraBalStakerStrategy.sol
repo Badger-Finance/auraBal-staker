@@ -27,8 +27,6 @@ contract AuraBalStakerStrategy is BaseStrategy {
     IBaseRewardPool public constant AURABAL_REWARDS =
         IBaseRewardPool(0x5e5ea2048475854a5702F5B8468A51Ba1296EFcC);
 
-    IVault public constant B_BB_A_USD =
-        IVault(0x06D756861De0724FAd5B5636124e0f252d3C1404);
     IVault public constant GRAVIAURA =
         IVault(0xBA485b556399123261a5F9c95d413B4f93107407);
 
@@ -81,9 +79,10 @@ contract AuraBalStakerStrategy is BaseStrategy {
         AURABAL.safeApprove(address(AURABAL_REWARDS), type(uint256).max);
 
         BAL.safeApprove(address(BALANCER_VAULT), type(uint256).max);
+        WETH.safeApprove(address(BALANCER_VAULT), type(uint256).max);
         BALETH_BPT.safeApprove(address(BALANCER_VAULT), type(uint256).max);
+        BB_A_USD.approve(address(BALANCER_VAULT), type(uint256).max);
 
-        BB_A_USD.approve(address(B_BB_A_USD), type(uint256).max);
         AURA.approve(address(GRAVIAURA), type(uint256).max);
     }
 
@@ -101,7 +100,7 @@ contract AuraBalStakerStrategy is BaseStrategy {
         balEthBptToAuraBalMinOutBps = _minOutBps;
     }
 
-    function seuMinBbaUsdHarvest(uint256 _minBbaUsd) external {
+    function setMinBbaUsdHarvest(uint256 _minBbaUsd) external {
         _onlyGovernanceOrStrategist();
 
         minBbaUsdHarvest = _minBbaUsd;
@@ -190,34 +189,36 @@ contract AuraBalStakerStrategy is BaseStrategy {
             assets[2] = IAsset(address(USDC));
             assets[3] = IAsset(address(WETH));
 
+            int256[] memory limits = new int256[](4);
+            limits[0] = int256(bbaUsdBalance);
+
             IBalancerVault.BatchSwapStep[]
                 memory swaps = new IBalancerVault.BatchSwapStep[](3);
 
             // BB_A_USD --> BB_A_USDC
             swaps[0] = IBalancerVault.BatchSwapStep({
                 poolId: BB_A_USD_POOL_ID,
-                assetInIndex: 1, // TODO: No magic numbers
-                assetOutIndex: 3,
+                assetInIndex: 0,
+                assetOutIndex: 1,
                 amount: bbaUsdBalance,
                 userData: new bytes(0)
             });
             // BB_A_USDC --> USDC
             swaps[1] = IBalancerVault.BatchSwapStep({
                 poolId: BB_A_USDC_POOL_ID,
-                assetInIndex: 0,
-                assetOutIndex: 1,
+                assetInIndex: 1,
+                assetOutIndex: 2,
                 amount: 0, // 0 means all from last step
                 userData: new bytes(0)
             });
             // USDC --> WETH
             swaps[2] = IBalancerVault.BatchSwapStep({
                 poolId: USDC_WETH_POOL_ID,
-                assetInIndex: 0,
-                assetOutIndex: 1,
+                assetInIndex: 2,
+                assetOutIndex: 3,
                 amount: 0, // 0 means all from last step
                 userData: new bytes(0)
             });
-            int256[] memory limits = new int256[](3);
 
             IBalancerVault.FundManagement memory fundManagement = IBalancerVault
                 .FundManagement({
@@ -297,7 +298,7 @@ contract AuraBalStakerStrategy is BaseStrategy {
                 type(uint256).max
             );
 
-            harvested[1].amount = auraBalEarned;
+            harvested[0].amount = auraBalEarned;
         }
 
         // AURA --> graviAURA
@@ -306,7 +307,7 @@ contract AuraBalStakerStrategy is BaseStrategy {
             GRAVIAURA.deposit(auraBalance);
             uint256 graviAuraBalance = GRAVIAURA.balanceOf(address(this));
 
-            harvested[2].amount = graviAuraBalance;
+            harvested[1].amount = graviAuraBalance;
             _processExtraToken(address(GRAVIAURA), graviAuraBalance);
         }
 
