@@ -18,7 +18,6 @@ class StrategyResolver(StrategyCoreResolver):
         return {
             "auraBalRewards": strategy.AURABAL_REWARDS(),
             "graviAura": strategy.GRAVIAURA(),
-            "bbaUsd": strategy.BB_A_USD(),
             "badgerTree": sett.badgerTree(),
         }
 
@@ -31,6 +30,7 @@ class StrategyResolver(StrategyCoreResolver):
 
         graviAura = interface.IERC20(strategy.GRAVIAURA())
         bbaUsd = interface.IERC20(strategy.BB_A_USD())
+        weth = interface.IERC20(strategy.WETH())
 
         calls = self.add_entity_balances_for_tokens(calls, "aura", aura, entities)
         calls = self.add_entity_balances_for_tokens(calls, "auraBal", auraBal, entities)
@@ -38,6 +38,7 @@ class StrategyResolver(StrategyCoreResolver):
             calls, "graviAura", graviAura, entities
         )
         calls = self.add_entity_balances_for_tokens(calls, "bbaUsd", bbaUsd, entities)
+        calls = self.add_entity_balances_for_tokens(calls, "weth", weth, entities)
 
         return calls
 
@@ -61,7 +62,12 @@ class StrategyResolver(StrategyCoreResolver):
         }
 
         # bbaUsd is autocompounded when strategy balance is greater than minBbaUsdHarvest
-        assert after.balances("bbaUsd", "strategy") < self.manager.strategy.minBbaUsdHarvest()
+        assert (
+            after.balances("bbaUsd", "strategy")
+            < self.manager.strategy.minBbaUsdHarvest()
+        )
+
+        assert after.balances("weth", "strategy") == 0
 
         for token_key, event in zip(emits, tx.events["TreeDistribution"]):
             token = emits[token_key]
