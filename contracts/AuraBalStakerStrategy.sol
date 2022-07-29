@@ -74,7 +74,7 @@ contract AuraBalStakerStrategy is BaseStrategy {
 
         claimRewardsOnWithdrawAll = true;
         balEthBptToAuraBalMinOutBps = 9500; // max 5% slippage
-        minBbaUsdHarvest = 1000e18;
+        minBbaUsdHarvest = 1000e18; // ~$1000
 
         AURABAL.safeApprove(address(AURABAL_REWARDS), type(uint256).max);
 
@@ -121,7 +121,6 @@ contract AuraBalStakerStrategy is BaseStrategy {
         override
         returns (address[] memory)
     {
-        // TODO: Check
         address[] memory protectedTokens = new address[](4);
         protectedTokens[0] = want; // AURABAL
         protectedTokens[1] = address(AURA);
