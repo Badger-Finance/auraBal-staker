@@ -7,7 +7,6 @@ from helpers.constants import AddressZero
 
 
 VAULT_ADDRESS = "0x37d9D2C6035b744849C15F1BFEE8F268a20fCBd8"
-STRAT_ADDRESS = "0xfB490b5beA343ABAe0E71B61bBdfd4301F5e4df9"
 
 
 @pytest.fixture
@@ -16,8 +15,8 @@ def vault_proxy():
 
 
 @pytest.fixture
-def strat_proxy():
-    return AuraBalStakerStrategy.at(STRAT_ADDRESS)
+def strat_proxy(vault_proxy):
+    return AuraBalStakerStrategy.at(vault_proxy.strategy())
 
 
 @pytest.fixture
@@ -41,7 +40,7 @@ def new_strategy(vault_proxy, proxyAdmin, deployer):
 
 def test_check_storage_integrity(strat_proxy, vault_proxy, new_strategy):
     with brownie.reverts():
-        strat_proxy.B_BB_A_USD()
+        strat_proxy.minBbaUsdHarvest()
 
     ## Check Integrity
     assert new_strategy.want() == strat_proxy.want()
@@ -61,26 +60,17 @@ def test_check_storage_integrity(strat_proxy, vault_proxy, new_strategy):
     )
 
     # Check if var exists
-    assert new_strategy.B_BB_A_USD() != AddressZero
+    assert new_strategy.BB_A_USD() != AddressZero
+    assert new_strategy.minBbaUsdHarvest() == int(1000e18)
 
     gov = accounts.at(vault_proxy.governance(), force=True)
     bb_a_usd = interface.IERC20(strat_proxy.BB_A_USD())
 
-    # Harvest bb-a-usd
+    # Harvest
     strat_proxy.harvest({"from": gov})
 
     # Checkpoint balance
     old_balance = vault_proxy.balance()
-
-    assert bb_a_usd.balanceOf(strat_proxy) > 0
-
-    # Emit to tree
-    vault_proxy.emitNonProtectedToken(strat_proxy.BB_A_USD(), {"from": gov})
-
-    assert bb_a_usd.balanceOf(strat_proxy) == 0
-    assert bb_a_usd.balanceOf(vault_proxy) == 0
-    assert bb_a_usd.balanceOf(vault_proxy.treasury()) > 0
-    assert bb_a_usd.balanceOf(vault_proxy.badgerTree()) > 0
 
     # Migrate strategy
     vault_proxy.withdrawToVault({"from": gov})
@@ -97,4 +87,4 @@ def test_check_storage_integrity(strat_proxy, vault_proxy, new_strategy):
 
     # Test harvest
     new_strategy.harvest({"from": gov})
-    assert bb_a_usd.balanceOf(new_strategy) == 0
+    assert bb_a_usd.balanceOf(new_strategy) > 0

@@ -18,7 +18,6 @@ class StrategyResolver(StrategyCoreResolver):
         return {
             "auraBalRewards": strategy.AURABAL_REWARDS(),
             "graviAura": strategy.GRAVIAURA(),
-            "bBbaUsd": strategy.B_BB_A_USD(),
             "badgerTree": sett.badgerTree(),
         }
 
@@ -30,14 +29,16 @@ class StrategyResolver(StrategyCoreResolver):
         auraBal = interface.IERC20(strategy.AURABAL())  # want
 
         graviAura = interface.IERC20(strategy.GRAVIAURA())
-        bBbaUsd = interface.IERC20(strategy.B_BB_A_USD())
+        bbaUsd = interface.IERC20(strategy.BB_A_USD())
+        weth = interface.IERC20(strategy.WETH())
 
         calls = self.add_entity_balances_for_tokens(calls, "aura", aura, entities)
         calls = self.add_entity_balances_for_tokens(calls, "auraBal", auraBal, entities)
         calls = self.add_entity_balances_for_tokens(
             calls, "graviAura", graviAura, entities
         )
-        calls = self.add_entity_balances_for_tokens(calls, "bBbaUsd", bBbaUsd, entities)
+        calls = self.add_entity_balances_for_tokens(calls, "bbaUsd", bbaUsd, entities)
+        calls = self.add_entity_balances_for_tokens(calls, "weth", weth, entities)
 
         return calls
 
@@ -54,12 +55,19 @@ class StrategyResolver(StrategyCoreResolver):
         assert event["token"] == WANT
         assert event["amount"] == after.get("sett.balance") - before.get("sett.balance")
 
-        assert len(tx.events["TreeDistribution"]) == 2
+        assert len(tx.events["TreeDistribution"]) == 1
 
         emits = {
-            "bBbaUsd": self.manager.strategy.B_BB_A_USD(),
             "graviAura": self.manager.strategy.GRAVIAURA(),
         }
+
+        # bbaUsd is autocompounded when strategy balance is greater than minBbaUsdHarvest
+        assert (
+            after.balances("bbaUsd", "strategy")
+            < self.manager.strategy.minBbaUsdHarvest()
+        )
+
+        assert after.balances("weth", "strategy") == 0
 
         for token_key, event in zip(emits, tx.events["TreeDistribution"]):
             token = emits[token_key]
