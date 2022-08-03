@@ -113,7 +113,7 @@ def test_setMinBbaUsdHarvest(deployer, vault, strategy, want, governance, keeper
 
     vault.earn({"from": governance})
 
-    chain.sleep(days(2))
+    chain.sleep(days(1))
     chain.mine()
     chain.snapshot()
 

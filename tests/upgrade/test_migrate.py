@@ -4,6 +4,7 @@ import pytest
 from brownie import *
 
 from helpers.constants import AddressZero
+from helpers.time import days
 
 
 VAULT_ADDRESS = "0x37d9D2C6035b744849C15F1BFEE8F268a20fCBd8"
@@ -84,6 +85,10 @@ def test_check_storage_integrity(strat_proxy, vault_proxy, new_strategy):
 
     assert new_strategy.balanceOf() > 0
     assert vault_proxy.balance() == old_balance
+
+    # Sleep to accrue rewards
+    chain.sleep(days(2))
+    chain.mine()
 
     # Test harvest
     new_strategy.harvest({"from": gov})
