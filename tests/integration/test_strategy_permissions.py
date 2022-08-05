@@ -98,6 +98,14 @@ def test_strategy_action_permissions(deployer, vault, strategy, want, keeper):
             with brownie.reverts("onlyGovernanceOrStrategist"):
                 strategy.setClaimRewardsOnWithdrawAll(False, {"from": actor})
 
+    # setMinBbaUsdHarvest _onlyGovernanceOrStrategist()
+    for actor in actorsToCheck:
+        if actor == strategy.governance() or actor == strategy.strategist():
+            strategy.setMinBbaUsdHarvest(0, {"from": actor})
+        else:
+            with brownie.reverts("onlyGovernanceOrStrategist"):
+                strategy.setMinBbaUsdHarvest(0, {"from": actor})
+
     # withdraw onlyVault
     for actor in actorsToCheck:
         with brownie.reverts("onlyVault"):
