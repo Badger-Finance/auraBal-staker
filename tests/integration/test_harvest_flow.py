@@ -93,6 +93,9 @@ def test_single_user_harvest_flow(deployer, vault, strategy, want, keeper):
     chain.sleep(days(3))
     chain.mine()
 
+    # Setting threshold to 0 to ensure autocompounding portion is properly tested on Resolver
+    strategy.setMinBbaUsdHarvest(0)
+
     snap.settHarvest({"from": keeper})
     snap.settWithdraw(shares // 2 - 1, {"from": deployer})
 

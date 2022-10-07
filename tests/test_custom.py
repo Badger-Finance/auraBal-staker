@@ -2,9 +2,6 @@ import brownie
 from brownie import *
 from helpers.constants import AddressZero, MaxUint256
 from helpers.time import days
-from helpers.utils import (
-    approx,
-)
 
 
 def state_setup(deployer, vault, want, keeper):
@@ -96,3 +93,37 @@ def test_claimRewardsOnWithdrawAll(deployer, vault, strategy, want, governance):
 
     vault.withdrawToVault({"from": governance})
     assert aura.balanceOf(strategy) == 0
+
+
+def test_setMinBbaUsdHarvest(deployer, vault, strategy, want, governance, keeper):
+    startingBalance = want.balanceOf(deployer)
+
+    bbaUsd = interface.IERC20Detailed(strategy.BB_A_USD())
+
+    depositAmount = startingBalance // 2
+    assert startingBalance >= depositAmount
+    assert startingBalance >= 0
+    # End Setup
+
+    # Deposit
+    assert want.balanceOf(vault) == 0
+
+    want.approve(vault, MaxUint256, {"from": deployer})
+    vault.deposit(depositAmount, {"from": deployer})
+
+    vault.earn({"from": governance})
+
+    chain.sleep(days(1))
+    chain.mine()
+    chain.snapshot()
+
+    strategy.harvest({"from": keeper})
+    assert bbaUsd.balanceOf(strategy) > 0
+
+    # Set minimum amount to harvest to 0
+    chain.revert()
+
+    strategy.setMinBbaUsdHarvest(0)
+
+    strategy.harvest({"from": keeper})
+    assert bbaUsd.balanceOf(strategy) == 0

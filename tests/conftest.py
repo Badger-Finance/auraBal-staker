@@ -125,12 +125,13 @@ def deployed(
             WITHDRAWAL_FEE,
             MANAGEMENT_FEE,
         ],
+        {"from": deployer},
     )
     vault.setStrategist(deployer, {"from": governance})
     # NOTE: TheVault starts unpaused
 
     strategy = AuraBalStakerStrategy.deploy({"from": deployer})
-    strategy.initialize(vault)
+    strategy.initialize(vault, {"from": deployer})
     # NOTE: Strategy starts unpaused
 
     vault.setStrategy(strategy, {"from": governance})

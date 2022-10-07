@@ -18,7 +18,6 @@ class StrategyResolver(StrategyCoreResolver):
         return {
             "auraBalRewards": strategy.AURABAL_REWARDS(),
             "graviAura": strategy.GRAVIAURA(),
-            "bBbaUsd": strategy.B_BB_A_USD(),
             "badgerTree": sett.badgerTree(),
         }
 
@@ -30,14 +29,20 @@ class StrategyResolver(StrategyCoreResolver):
         auraBal = interface.IERC20(strategy.AURABAL())  # want
 
         graviAura = interface.IERC20(strategy.GRAVIAURA())
-        bBbaUsd = interface.IERC20(strategy.B_BB_A_USD())
+        bbaUsd = interface.IERC20(strategy.BB_A_USD())
+        bbaUsdc = interface.IERC20(strategy.BB_A_USDC())
+        usdc = interface.IERC20(strategy.USDC())
+        weth = interface.IERC20(strategy.WETH())
 
         calls = self.add_entity_balances_for_tokens(calls, "aura", aura, entities)
         calls = self.add_entity_balances_for_tokens(calls, "auraBal", auraBal, entities)
         calls = self.add_entity_balances_for_tokens(
             calls, "graviAura", graviAura, entities
         )
-        calls = self.add_entity_balances_for_tokens(calls, "bBbaUsd", bBbaUsd, entities)
+        calls = self.add_entity_balances_for_tokens(calls, "bbaUsd", bbaUsd, entities)
+        calls = self.add_entity_balances_for_tokens(calls, "bbaUsdc", bbaUsdc, entities)
+        calls = self.add_entity_balances_for_tokens(calls, "usdc", usdc, entities)
+        calls = self.add_entity_balances_for_tokens(calls, "weth", weth, entities)
 
         return calls
 
@@ -54,12 +59,35 @@ class StrategyResolver(StrategyCoreResolver):
         assert event["token"] == WANT
         assert event["amount"] == after.get("sett.balance") - before.get("sett.balance")
 
-        assert len(tx.events["TreeDistribution"]) == 2
+        assert len(tx.events["TreeDistribution"]) == 1
 
         emits = {
-            "bBbaUsd": self.manager.strategy.B_BB_A_USD(),
             "graviAura": self.manager.strategy.GRAVIAURA(),
         }
+
+        # bbaUsd is autocompounded when strategy balance is greater than minBbaUsdHarvest
+        # Find amount of bb-a-usd harvested
+        amount = 0
+        rewardsPool = "0xFD176Ba656b91F0cE8C59ad5C3245beBb99cd69a"
+        for transfer in tx.events["Transfer"]:
+            if transfer["from"] == rewardsPool and transfer["to"] == self.manager.strategy:
+                amount = transfer["value"]
+                break
+
+        total_bb_a_usd = amount + before.balances("bbaUsd", "strategy")
+        threshold = self.manager.strategy.minBbaUsdHarvest()
+
+        if total_bb_a_usd < threshold:
+            assert (
+                after.balances("bbaUsd", "strategy") == total_bb_a_usd
+            )
+        else:
+            assert after.balances("bbaUsd", "strategy") == 0
+
+        # Check for swap dust
+        assert after.balances("weth", "strategy") == 0
+        assert after.balances("usdc", "strategy") == 0
+        assert after.balances("bbaUsdc", "strategy") == 0
 
         for token_key, event in zip(emits, tx.events["TreeDistribution"]):
             token = emits[token_key]
