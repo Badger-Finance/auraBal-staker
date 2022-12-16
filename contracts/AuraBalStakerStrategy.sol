@@ -25,7 +25,7 @@ contract AuraBalStakerStrategy is BaseStrategy {
     uint256 public minBbaUsdHarvest;
 
     IBaseRewardPool public constant AURABAL_REWARDS =
-        IBaseRewardPool(0x5e5ea2048475854a5702F5B8468A51Ba1296EFcC);
+        IBaseRewardPool(0x00A7BA8Ae7bca0B10A32Ea1f8e2a1Da980c6CAd2);
 
     IVault public constant GRAVIAURA =
         IVault(0xBA485b556399123261a5F9c95d413B4f93107407);
