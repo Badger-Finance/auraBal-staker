@@ -68,7 +68,7 @@ class StrategyResolver(StrategyCoreResolver):
         # bbaUsd is autocompounded when strategy balance is greater than minBbaUsdHarvest
         # Find amount of bb-a-usd harvested
         amount = 0
-        rewardsPool = "0xFD176Ba656b91F0cE8C59ad5C3245beBb99cd69a"
+        rewardsPool = "0x62D7d772b2d909A0779d15299F4FC87e34513c6d"
         for transfer in tx.events["Transfer"]:
             if transfer["from"] == rewardsPool and transfer["to"] == self.manager.strategy:
                 amount = transfer["value"]
@@ -76,7 +76,6 @@ class StrategyResolver(StrategyCoreResolver):
 
         total_bb_a_usd = amount + before.balances("bbaUsd", "strategy")
         threshold = self.manager.strategy.minBbaUsdHarvest()
-
         if total_bb_a_usd < threshold:
             assert (
                 after.balances("bbaUsd", "strategy") == total_bb_a_usd

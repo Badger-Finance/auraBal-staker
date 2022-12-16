@@ -1,5 +1,5 @@
 import brownie
-from brownie import *
+from brownie import interface, chain, accounts
 from helpers.constants import AddressZero, MaxUint256
 from helpers.time import days
 
@@ -115,15 +115,22 @@ def test_setMinBbaUsdHarvest(deployer, vault, strategy, want, governance, keeper
 
     chain.sleep(days(1))
     chain.mine()
+
     chain.snapshot()
 
-    strategy.harvest({"from": keeper})
-    assert bbaUsd.balanceOf(strategy) > 0
+    if bbaUsd.balanceOf(strategy) > strategy.minBbaUsdHarvest():
+        strategy.harvest({"from": keeper})
+        assert bbaUsd.balanceOf(strategy) == 0
+    else:
+        chain.mine()
+        strategy.harvest({"from": keeper})
+        # Nothing happens
+        assert bbaUsd.balanceOf(strategy) > 0
 
-    # Set minimum amount to harvest to 0
-    chain.revert()
+        # Set minimum amount to harvest to 0
+        chain.revert()
+        strategy.setMinBbaUsdHarvest(0) 
+        strategy.harvest({"from": keeper})
+        assert bbaUsd.balanceOf(strategy) == 0  
 
-    strategy.setMinBbaUsdHarvest(0)
 
-    strategy.harvest({"from": keeper})
-    assert bbaUsd.balanceOf(strategy) == 0
