@@ -45,9 +45,9 @@ contract AuraBalStakerStrategy is BaseStrategy {
     IERC20Upgradeable public constant BALETH_BPT =
         IERC20Upgradeable(0x5c6Ee304399DBdB9C8Ef030aB642B10820DB8F56);
     IERC20Upgradeable public constant BB_A_USD =
-        IERC20Upgradeable(0x7B50775383d3D6f0215A8F290f2C9e2eEBBEceb2);
+        IERC20Upgradeable(0xA13a9247ea42D743238089903570127DdA72fE44);
     IERC20Upgradeable public constant BB_A_USDC =
-        IERC20Upgradeable(0x9210F1204b5a24742Eba12f710636D76240dF3d0);
+        IERC20Upgradeable(0x82698aeCc9E28e9Bb27608Bd52cF57f704BD1B83);
     IERC20Upgradeable public constant USDC =
         IERC20Upgradeable(0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48);
 
@@ -56,9 +56,9 @@ contract AuraBalStakerStrategy is BaseStrategy {
     bytes32 public constant AURABAL_BALETH_BPT_POOL_ID =
         0x3dd0843a028c86e0b760b1a76929d1c5ef93a2dd000200000000000000000249;
     bytes32 public constant BB_A_USD_POOL_ID =
-        0x7b50775383d3d6f0215a8f290f2c9e2eebbeceb20000000000000000000000fe;
+        0xa13a9247ea42d743238089903570127dda72fe4400000000000000000000035d;
     bytes32 public constant BB_A_USDC_POOL_ID =
-        0x9210f1204b5a24742eba12f710636d76240df3d00000000000000000000000fc;
+        0x82698aecc9e28e9bb27608bd52cf57f704bd1b83000000000000000000000336;
     bytes32 public constant USDC_WETH_POOL_ID =
         0x96646936b91d6b9d7d0c47c496afbf3d6ec7b6f8000200000000000000000019;
 
